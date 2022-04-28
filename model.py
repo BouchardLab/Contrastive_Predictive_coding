@@ -1,6 +1,6 @@
 import os
 import torch
-from modules import AudioModel
+from modules import AudioModel, GeneralModel
 
 
 def audio_model(args):
@@ -21,12 +21,54 @@ def audio_model(args):
     return model
 
 
+def lorenz_model(args):
+    genc_hidden = 3
+    gar_hidden = 3
+    model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
+    return model
+
+def m1_model(args):
+    genc_hidden = 5
+    gar_hidden = 5
+    model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
+    return model
+
+def hc_model(args):
+    genc_hidden = 5
+    gar_hidden = 5
+    model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
+    return model
+
+def temp_model(args):
+    genc_hidden = 5
+    gar_hidden = 5
+    model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
+    return model
+
+def ms_model(args):
+    genc_hidden = 5
+    gar_hidden = 5
+    model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
+    return model
+
 def load_model(args, reload_model=False):
 
     if args.experiment == "audio":
         model = audio_model(args)
+    elif args.experiment == "lorenz":
+        model = lorenz_model(args)
+    elif args.experiment == "m1":
+        model = m1_model(args)
+    elif args.experiment == "hc":
+        model = hc_model(args)
+    elif args.experiment == "temp":
+        model = temp_model(args)
+    elif args.experiment == "ms":
+        model = ms_model(args)
     else:
         raise NotImplementedError
+
+    # import pdb; pdb.set_trace()
 
     # reload model
     if args.start_epoch > 0 or reload_model:
@@ -38,7 +80,6 @@ def load_model(args, reload_model=False):
         print("### RELOADING MODEL FROM CHECKPOINT {} ###".format(load_epoch))
         model_fp = os.path.join(args.model_path, "checkpoint_{}.tar".format(load_epoch))
         model.load_state_dict(torch.load(model_fp))
-
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
@@ -52,7 +93,7 @@ def load_model(args, reload_model=False):
 
         print("### USING FP16 ###")
         model, optimizer = amp.initialize(
-            model, optimizer, opt_level=args.fp16_opt_level
+            model.to(args.device), optimizer, opt_level=args.fp16_opt_level
         )
 
     args.num_gpu = torch.cuda.device_count()
@@ -61,6 +102,9 @@ def load_model(args, reload_model=False):
     model = torch.nn.DataParallel(model)
     model = model.to(args.device)
     args.batch_size = args.batch_size * args.num_gpu
+
+    # import pdb; pdb.set_trace()
+
     return model, optimizer
 
 
@@ -76,3 +120,4 @@ def save_model(args, model, optimizer, best=False):
 
     with open(os.path.join(args.out_dir, "best_checkpoint.txt"), "w") as f:
         f.write(str(args.current_epoch))
+

@@ -3,7 +3,7 @@ device: "gpu"
 experiment: "audio"
 fp16: True
 fp16_opt_level: "O2"
-num_workers: 16
+num_workers: 0
 defaults:
   - general: defaults
   - cpc: defaults
