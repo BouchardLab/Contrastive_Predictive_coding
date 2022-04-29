@@ -1,6 +1,12 @@
 import os
 import torch
 import h5py
+import pandas as pd
+import numpy as np
+import pickle
+from scipy.interpolate import interp1d
+from scipy.signal import resample
+from scipy.ndimage import convolve1d
 
 from data.datasets.librispeech import LibriDataset
 from data.datasets.lorenz import LorenzDataset
@@ -9,6 +15,19 @@ from data.datasets.hc import HCDataset
 from data.datasets.temp import TEMPDataset
 from data.datasets.ms import MSDataset
 
+def sum_over_chunks(X, stride):
+    X_trunc = X[:len(X) - (len(X) % stride)]
+    reshaped = X_trunc.reshape((len(X_trunc) // stride, stride, X.shape[1]))
+    summed = reshaped.sum(axis=1)
+    return summed
+
+def moving_center(X, n, axis=0):
+    if n % 2 == 0:
+        n += 1
+    w = -np.ones(n) / n
+    w[n // 2] += 1
+    X_ctd = convolve1d(X, w, axis=axis)
+    return X_ctd
 
 def load_kording_paper_data(filename, bin_width_s=0.05, min_spike_count=10, preprocess=True):
     with open(filename, "rb") as fname:
@@ -262,7 +281,7 @@ def hc_loader(opt, num_workers=16, length=100, good_ts=22000):
         X = X[:good_ts]
         Y = Y[:good_ts]
 
-    train_dataset = M1Dataset(
+    train_dataset = HCDataset(
         X, length=length
     )
 
@@ -288,7 +307,7 @@ def temp_loader(opt, num_workers=16, length=100, good_ts=None):
         X = X[:good_ts]
         Y = Y[:good_ts]
 
-    train_dataset = M1Dataset(
+    train_dataset = TEMPDataset(
         X, length=length
     )
 
@@ -314,7 +333,7 @@ def ms_loader(opt, num_workers=16, length=100, good_ts=None):
         X = X[:good_ts]
         Y = Y[:good_ts]
 
-    train_dataset = M1Dataset(
+    train_dataset = MSDataset(
         X, length=length
     )
 

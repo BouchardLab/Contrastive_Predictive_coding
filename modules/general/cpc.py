@@ -58,7 +58,7 @@ class CPC(torch.nn.Module):
         return z, c
 
     def forward(self, x):
-        # import pdb; pdb.set_trace()
+        # print(x.device)
         z, c = self.get_latent_representations(x)
         loss, accuracy = self.loss.get(x, z, c)
         return loss, accuracy, z, c

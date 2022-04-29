@@ -2,6 +2,12 @@ import os
 import torch
 from modules import AudioModel, GeneralModel
 
+try:
+    from apex import amp
+except ImportError:
+    raise ImportError(
+        "Install the apex package from https://www.github.com/nvidia/apex to use fp16 for training"
+    )
 
 def audio_model(args):
     strides = [5, 4, 2, 2, 2]
@@ -84,23 +90,16 @@ def load_model(args, reload_model=False):
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
     if args.fp16:
-        try:
-            from apex import amp
-        except ImportError:
-            raise ImportError(
-                "Install the apex package from https://www.github.com/nvidia/apex to use fp16 for training"
-            )
-
         print("### USING FP16 ###")
-        model, optimizer = amp.initialize(
-            model.to(args.device), optimizer, opt_level=args.fp16_opt_level
-        )
+        model, optimizer = amp.initialize(model.to(args.device), optimizer, opt_level=args.fp16_opt_level)
+    else:
+        model = model.to(args.device)
+        # model, optimizer = amp.initialize(model.to(args.device), optimizer, opt_level="O0")
 
     args.num_gpu = torch.cuda.device_count()
     print("Using {} GPUs".format(args.num_gpu))
 
     model = torch.nn.DataParallel(model)
-    model = model.to(args.device)
     args.batch_size = args.batch_size * args.num_gpu
 
     # import pdb; pdb.set_trace()

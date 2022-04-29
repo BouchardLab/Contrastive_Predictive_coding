@@ -56,8 +56,8 @@ class CPC(torch.nn.Module):
         # TODO checked
         return z, c
 
-
     def forward(self, x):
+        breakpoint()
         z, c = self.get_latent_representations(x)
         loss, accuracy = self.loss.get(x, z, c)
         return loss, accuracy, z, c

@@ -3,6 +3,8 @@ import argparse
 import time
 import torch
 import numpy as np
+from tqdm import tqdm
+from apex import amp
 
 # TensorBoard
 from torch.utils.tensorboard import SummaryWriter
@@ -19,27 +21,24 @@ def train(args, model, optimizer, writer):
     total_step = len(train_loader)
     print_idx = 100
 
-    # at which step to validate training
-    # validation_idx = 1000
-
     best_loss = 0
 
     start_time = time.time()
     global_step = 0
-    for epoch in range(args.start_epoch, args.start_epoch + args.num_epochs):
+    for epoch in tqdm(range(args.start_epoch, args.start_epoch + args.num_epochs)):
         loss_epoch = 0
 
-        for step, lorenz in enumerate(train_loader):
-            # import pdb; pdb.set_trace()
+        for step, batch in tqdm(enumerate(train_loader)):
             start_time = time.time()
 
-            # if step % validation_idx == 0:
-            #     validate_speakers(args, train_dataset, model, optimizer, epoch, step, global_step, writer)
-
-            lorenz = lorenz.to(args.device)
+            batch = batch.to(args.device)
+            if args.fp16:
+                batch = batch.half()
+            else:
+                batch = batch.float()
 
             # forward
-            loss = model(lorenz)
+            loss = model(batch)
 
             # accumulate losses for all GPUs
             loss = loss.mean()
@@ -77,7 +76,6 @@ def train(args, model, optimizer, writer):
 
         avg_loss = loss_epoch / len(train_loader)
         writer.add_scalar("Loss/train", avg_loss, epoch)
-        # ex.log_scalar("loss.train", avg_loss, epoch)
 
         conv = 0
         for idx, layer in enumerate(model.module.model.modules()):
@@ -104,6 +102,7 @@ def train(args, model, optimizer, writer):
         # save current model state
         save_model(args, model, optimizer)
         args.current_epoch += 1
+    print("Training takes {}s".format(time.time() - start_time))
 
 
 def main():
