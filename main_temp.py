@@ -16,7 +16,7 @@ def train(args, model, optimizer, writer):
 
     # import pdb; pdb.set_trace()
     # get datasets and dataloaders
-    (train_loader, train_dataset, test_loader, test_dataset,) = temp_loader(args, num_workers=args.num_workers)
+    (train_loader, train_dataset, test_loader, test_dataset, _, _) = temp_loader(args, num_workers=args.num_workers)
 
     total_step = len(train_loader)
     print_idx = 100

@@ -15,11 +15,13 @@ from data.datasets.hc import HCDataset
 from data.datasets.temp import TEMPDataset
 from data.datasets.ms import MSDataset
 
+
 def sum_over_chunks(X, stride):
     X_trunc = X[:len(X) - (len(X) % stride)]
     reshaped = X_trunc.reshape((len(X_trunc) // stride, stride, X.shape[1]))
     summed = reshaped.sum(axis=1)
     return summed
+
 
 def moving_center(X, n, axis=0):
     if n % 2 == 0:
@@ -28,6 +30,7 @@ def moving_center(X, n, axis=0):
     w[n // 2] += 1
     X_ctd = convolve1d(X, w, axis=axis)
     return X_ctd
+
 
 def load_kording_paper_data(filename, bin_width_s=0.05, min_spike_count=10, preprocess=True):
     with open(filename, "rb") as fname:
@@ -47,6 +50,7 @@ def load_kording_paper_data(filename, bin_width_s=0.05, min_spike_count=10, prep
         Y /= Y.std(axis=0, keepdims=True)
     return {'neural': X, 'loc': Y}
 
+
 def load_weather_data(filename):
     df = pd.read_csv(filename)
     df['datetime'] = pd.to_datetime(df['datetime'])
@@ -65,6 +69,7 @@ def load_weather_data(filename):
     ds_factor = 24
     X = resample(Xfs, Xfs.shape[0] // ds_factor, axis=0)
     return X
+
 
 def load_sabes_data(filename, bin_width_s=.05, preprocess=True):
     # Load MATLAB file
@@ -124,6 +129,7 @@ def load_sabes_data(filename, bin_width_s=.05, preprocess=True):
         result["cursor"] = cursor_interp
         return result
 
+
 def load_accel_data(filename, preprocess=True):
     df = pd.read_csv(filename)
     X = df.values[:, 1:]
@@ -131,6 +137,7 @@ def load_accel_data(filename, preprocess=True):
         X -= X.mean(axis=0, keepdims=True)
         X /= X.std(axis=0, keepdims=True)
     return X
+
 
 def librispeech_loader(opt, num_workers=16):
 
@@ -200,6 +207,7 @@ def librispeech_loader(opt, num_workers=16):
 
     return train_loader, train_dataset, test_loader, test_dataset
 
+
 def lorenz_loader(opt, num_workers=16, lorenz_length=100):
     # load data
     # import pdb; pdb.set_trace()
@@ -246,7 +254,8 @@ def lorenz_loader(opt, num_workers=16, lorenz_length=100):
 
     return train_loader, train_dataset, test_loader, test_dataset
 
-def m1_loader(opt, num_workers=16, length=100, good_ts=None):
+
+def m1_loader(opt, num_workers=16, length=100, good_ts=None, train_test_ratio=0.8):
     # load data
 
     M1 = load_sabes_data('/home/rui/Data/M1/indy_20160627_01.mat')
@@ -255,50 +264,95 @@ def m1_loader(opt, num_workers=16, length=100, good_ts=None):
         X = X[:good_ts]
         Y = Y[:good_ts]
 
-    train_dataset = M1Dataset(
-        X, length=length
-    )
+    if train_test_ratio == 1:
+        train_dataset = M1Dataset(
+            X, length=length
+        )
+        test_dataset = None
+        train_loader = torch.utils.data.DataLoader(
+            dataset=train_dataset,
+            batch_size=opt.batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+        )
+        test_loader = None
+        return train_loader, train_dataset, test_loader, test_dataset
+    else:
+        n = X.shape[0]
+        n_train = int(n * train_test_ratio)
+        X_train = X[:n_train]
+        X_test = X[n_train:]
+        Y_train = Y[:n_train]
+        Y_test = Y[n_train:]
+        train_dataset = M1Dataset(
+            X_train, length=length
+        )
+        test_dataset = M1Dataset(X_test, mean=train_dataset.mean, std=train_dataset.std)
+        train_loader = torch.utils.data.DataLoader(
+            dataset=train_dataset,
+            batch_size=opt.batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+        )
+        test_loader = torch.utils.data.DataLoader(
+            dataset=test_dataset,
+            batch_size=1,
+            shuffle=False,
+            num_workers=num_workers,
+        )
+        return train_loader, train_dataset, test_loader, test_dataset, Y_train, Y_test
 
-    test_dataset = None
 
-    train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset,
-        batch_size=opt.batch_size,
-        shuffle=True,
-        num_workers=num_workers,
-    )
-
-    test_loader = None
-
-    return train_loader, train_dataset, test_loader, test_dataset
-
-def hc_loader(opt, num_workers=16, length=100, good_ts=22000):
+def hc_loader(opt, num_workers=16, length=100, good_ts=22000, train_test_ratio=0.8):
     # load data
 
     HC = load_kording_paper_data('/home/rui/Data/HC/example_data_hc.pickle')
     X, Y = HC['neural'], HC['loc']
+
     if good_ts is not None:
         X = X[:good_ts]
         Y = Y[:good_ts]
 
-    train_dataset = HCDataset(
-        X, length=length
-    )
+    if train_test_ratio == 1:
+        train_dataset = HCDataset(
+            X, length=length
+        )
+        test_dataset = None
+        train_loader = torch.utils.data.DataLoader(
+            dataset=train_dataset,
+            batch_size=opt.batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+        )
+        test_loader = None
+        return train_loader, train_dataset, test_loader, test_dataset
+    else:
+        n = X.shape[0]
+        n_train = int(n * train_test_ratio)
+        X_train = X[:n_train]
+        X_test = X[n_train:]
+        Y_train = Y[:n_train]
+        Y_test = Y[n_train:]
+        train_dataset = HCDataset(
+            X_train, length=length
+        )
+        test_dataset = HCDataset(X_test, mean=train_dataset.mean, std=train_dataset.std)
+        train_loader = torch.utils.data.DataLoader(
+            dataset=train_dataset,
+            batch_size=opt.batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+        )
+        test_loader = torch.utils.data.DataLoader(
+            dataset=test_dataset,
+            batch_size=1,
+            shuffle=False,
+            num_workers=num_workers,
+        )
+        return train_loader, train_dataset, test_loader, test_dataset, Y_train, Y_test
 
-    test_dataset = None
 
-    train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset,
-        batch_size=opt.batch_size,
-        shuffle=True,
-        num_workers=num_workers,
-    )
-
-    test_loader = None
-
-    return train_loader, train_dataset, test_loader, test_dataset
-
-def temp_loader(opt, num_workers=16, length=100, good_ts=None):
+def temp_loader(opt, num_workers=16, length=100, good_ts=None, train_test_ratio=0.8):
     # load data
 
     weather = load_weather_data('/home/rui/Data/TEMP/temperature.csv')
@@ -307,24 +361,46 @@ def temp_loader(opt, num_workers=16, length=100, good_ts=None):
         X = X[:good_ts]
         Y = Y[:good_ts]
 
-    train_dataset = TEMPDataset(
-        X, length=length
-    )
+    if train_test_ratio == 1:
+        train_dataset = TEMPDataset(
+            X, length=length
+        )
+        test_dataset = None
+        train_loader = torch.utils.data.DataLoader(
+            dataset=train_dataset,
+            batch_size=opt.batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+        )
+        test_loader = None
+        return train_loader, train_dataset, test_loader, test_dataset
+    else:
+        n = X.shape[0]
+        n_train = int(n * train_test_ratio)
+        X_train = X[:n_train]
+        X_test = X[n_train:]
+        Y_train = Y[:n_train]
+        Y_test = Y[n_train:]
+        train_dataset = TEMPDataset(
+            X_train, length=length
+        )
+        test_dataset = TEMPDataset(X_test, mean=train_dataset.mean, std=train_dataset.std)
+        train_loader = torch.utils.data.DataLoader(
+            dataset=train_dataset,
+            batch_size=opt.batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+        )
+        test_loader = torch.utils.data.DataLoader(
+            dataset=test_dataset,
+            batch_size=1,
+            shuffle=False,
+            num_workers=num_workers,
+        )
+        return train_loader, train_dataset, test_loader, test_dataset, Y_train, Y_test
 
-    test_dataset = None
 
-    train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset,
-        batch_size=opt.batch_size,
-        shuffle=True,
-        num_workers=num_workers,
-    )
-
-    test_loader = None
-
-    return train_loader, train_dataset, test_loader, test_dataset
-
-def ms_loader(opt, num_workers=16, length=100, good_ts=None):
+def ms_loader(opt, num_workers=16, length=100, good_ts=None, train_test_ratio=0.8):
     # load data
 
     ms = load_accel_data('/home/rui/Data/motion_sense/A_DeviceMotion_data/std_6/sub_19.csv')
@@ -333,20 +409,40 @@ def ms_loader(opt, num_workers=16, length=100, good_ts=None):
         X = X[:good_ts]
         Y = Y[:good_ts]
 
-    train_dataset = MSDataset(
-        X, length=length
-    )
-
-    test_dataset = None
-
-    train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset,
-        batch_size=opt.batch_size,
-        shuffle=True,
-        num_workers=num_workers,
-    )
-
-    test_loader = None
-
-    return train_loader, train_dataset, test_loader, test_dataset
-
+    if train_test_ratio == 1:
+        train_dataset = MSDataset(
+            X, length=length
+        )
+        test_dataset = None
+        train_loader = torch.utils.data.DataLoader(
+            dataset=train_dataset,
+            batch_size=opt.batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+        )
+        test_loader = None
+        return train_loader, train_dataset, test_loader, test_dataset
+    else:
+        n = X.shape[0]
+        n_train = int(n * train_test_ratio)
+        X_train = X[:n_train]
+        X_test = X[n_train:]
+        Y_train = Y[:n_train]
+        Y_test = Y[n_train:]
+        train_dataset = MSDataset(
+            X_train, length=length
+        )
+        test_dataset = MSDataset(X_test, mean=train_dataset.mean, std=train_dataset.std)
+        train_loader = torch.utils.data.DataLoader(
+            dataset=train_dataset,
+            batch_size=opt.batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+        )
+        test_loader = torch.utils.data.DataLoader(
+            dataset=test_dataset,
+            batch_size=1,
+            shuffle=False,
+            num_workers=num_workers,
+        )
+        return train_loader, train_dataset, test_loader, test_dataset, Y_train, Y_test
