@@ -42,6 +42,7 @@ def main():
     parser.add_argument('--negative_samples', type=int, default=10)
     parser.add_argument('--prediction_step', type=int, default=12)
     parser.add_argument('--subsample', action="store_true")
+    parser.add_argument('--nonlinear_encoding', action="store_true")
     # General
     parser.add_argument('--genc_input', type=int, default=30)
     parser.add_argument('--seed', type=int, default=22)

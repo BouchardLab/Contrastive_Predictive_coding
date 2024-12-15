@@ -1,5 +1,5 @@
 import torch
-from .encoder import Encoder
+from .encoder import Encoder_linear, Encoder_nonlinear
 from .autoregressor import Autoregressor
 from .infonce import InfoNCE
 
@@ -16,7 +16,10 @@ class CPC(torch.nn.Module):
         First, a non-linear encoder genc maps the input sequence of observations xt to a
         sequence of latent representations zt = genc(xt), potentially with a lower temporal resolution.
         """
-        self.encoder = Encoder(genc_input, genc_hidden)
+        if args.nonlinear_encoding:
+            self.encoder = Encoder_nonlinear(genc_input, genc_input, genc_hidden)
+        else:
+            self.encoder = Encoder_linear(genc_input, genc_hidden)
 
         """
         We then use a GRU RNN [17] for the autoregressive part of the model, gar with 256 dimensional hidden state.

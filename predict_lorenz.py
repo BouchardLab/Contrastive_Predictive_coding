@@ -9,13 +9,16 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from model import load_model, save_model
 from data.loaders import lorenz_loader
+from utils.util import linear_alignment
+from utils.metrics import compute_R2
 
 
 def encode_test(args, model):
-    (train_loader, train_dataset, test_loader, test_dataset,) = lorenz_loader(args, num_workers=args.num_workers)
-    import pdb; pdb.set_trace()
+    (train_loader, train_dataset, test_loader, test_dataset, X_dynamics) = lorenz_loader(args, num_workers=args.num_workers)
     z, _ = model.model.get_latent_representations(torch.from_numpy(test_dataset.get_full_data()[None,:,:]).to(args.device))
-    return z
+    aligned_encoded_signals = linear_alignment(z.detach().to('cpu')[0], X_dynamics)
+    R2_CPC = compute_R2(aligned_encoded_signals, X_dynamics)
+    return R2_CPC
 
 
 def main():
@@ -61,8 +64,8 @@ def main():
     # load model
     model, optimizer = load_model(args, reload_model=True)
 
-    z = encode_test(args, model.module)
-    breakpoint()
+    R2_CPC = encode_test(args, model.module)
+    print(R2_CPC)
 
 
 if __name__ == "__main__":

@@ -19,8 +19,7 @@ def encode_test(args, model):
     X_train_cpc = X_train_cpc.to("cpu").detach().numpy()[0]
     X_test_cpc, _ = model.model.get_latent_representations(torch.from_numpy(test_dataset.get_full_data()[None, :, :]).float().to(args.device))
     X_test_cpc = X_test_cpc.to("cpu").detach().numpy()[0]
-    import pdb;
-    pdb.set_trace()
+    # import pdb; pdb.set_trace()
     offsets = np.array([5, 10, 15])
     decoding_window = 3
     r2_cpcs = list()
@@ -42,6 +41,7 @@ def main():
     parser.add_argument('--negative_samples', type=int, default=10)
     parser.add_argument('--prediction_step', type=int, default=12)
     parser.add_argument('--subsample', action="store_true")
+    parser.add_argument('--nonlinear_encoding', action="store_true")
     # General
     parser.add_argument('--genc_input', type=int, default=55)
     parser.add_argument('--seed', type=int, default=22)

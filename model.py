@@ -9,6 +9,7 @@ except ImportError:
         "Install the apex package from https://www.github.com/nvidia/apex to use fp16 for training"
     )
 
+
 def audio_model(args):
     strides = [5, 4, 2, 2, 2]
     filter_sizes = [10, 8, 4, 4, 4]
@@ -33,11 +34,13 @@ def lorenz_model(args):
     model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
     return model
 
+
 def m1_model(args):
     genc_hidden = 5
     gar_hidden = 5
     model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
     return model
+
 
 def hc_model(args):
     genc_hidden = 5
@@ -45,17 +48,20 @@ def hc_model(args):
     model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
     return model
 
+
 def temp_model(args):
     genc_hidden = 5
     gar_hidden = 5
     model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
     return model
 
+
 def ms_model(args):
     genc_hidden = 5
     gar_hidden = 5
     model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
     return model
+
 
 def load_model(args, reload_model=False):
 
@@ -73,8 +79,6 @@ def load_model(args, reload_model=False):
         model = ms_model(args)
     else:
         raise NotImplementedError
-
-    # import pdb; pdb.set_trace()
 
     # reload model
     if args.start_epoch > 0 or reload_model:
@@ -108,6 +112,7 @@ def load_model(args, reload_model=False):
 
 
 def save_model(args, model, optimizer, best=False):
+
     if best:
         out = os.path.join(args.out_dir, "best_checkpoint.tar")
     else:

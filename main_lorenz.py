@@ -14,7 +14,7 @@ def train(args, model, optimizer, writer):
 
     # import pdb; pdb.set_trace()
     # get datasets and dataloaders
-    (train_loader, train_dataset, test_loader, test_dataset,) = lorenz_loader(args, num_workers=args.num_workers)
+    (train_loader, train_dataset, test_loader, test_dataset, X_dynamics) = lorenz_loader(args, num_workers=args.num_workers)
 
     total_step = len(train_loader)
     print_idx = 100
@@ -131,6 +131,7 @@ def main():
     parser.add_argument('--start_epoch', type=int, default=0)
     parser.add_argument('--model_path', type=str, default=".")
     parser.add_argument('--model_num', type=int, default=0)
+    parser.add_argument('--device', type=str, default=None)
 
     args = parser.parse_args()
 
@@ -138,7 +139,9 @@ def main():
     args.time = time.ctime()
 
     # Device configuration
-    args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if args.device is None:
+        args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
     args.current_epoch = args.start_epoch
 
@@ -150,7 +153,7 @@ def main():
     model, optimizer = load_model(args)
 
     # initialize TensorBoard
-    tb_dir = os.path.join(args.out_dir, args.experiment)
+    tb_dir = os.path.join(args.out_dir, args.experiment, str(args.snr_index))
     if not os.path.exists(tb_dir):
         os.makedirs(tb_dir)
     writer = SummaryWriter(log_dir=tb_dir)

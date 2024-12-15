@@ -30,6 +30,13 @@
           </mappings>
         </serverdata>
       </paths>
+      <paths name="rui@localhost:23000 password (1)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/rui/Research/CPC" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
     </serverData>
     <option name="myAutoUpload" value="ALWAYS" />
   </component>

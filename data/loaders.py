@@ -214,7 +214,7 @@ def lorenz_loader(opt, num_workers=16, lorenz_length=100):
     with h5py.File(opt.data_input_dir, "r") as f:
         # snr_vals = f.attrs["snr_vals"][:]
         # X = f["X"][:]
-        # X_dynamics = f["X_dynamics"][:]
+        X_dynamics = f["X_dynamics"][:]
         X_noisy_dset = f["X_noisy"][:]
         X_noisy = X_noisy_dset[opt.snr_index]
 
@@ -252,7 +252,7 @@ def lorenz_loader(opt, num_workers=16, lorenz_length=100):
         num_workers=num_workers,
     )
 
-    return train_loader, train_dataset, test_loader, test_dataset
+    return train_loader, train_dataset, test_loader, test_dataset, X_dynamics
 
 
 def m1_loader(opt, num_workers=16, length=100, good_ts=None, train_test_ratio=0.8):

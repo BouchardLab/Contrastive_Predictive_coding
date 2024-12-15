@@ -14,7 +14,6 @@ from data.loaders import hc_loader
 
 def train(args, model, optimizer, writer):
 
-    # import pdb; pdb.set_trace()
     # get datasets and dataloaders
     (train_loader, train_dataset, test_loader, test_dataset, _, _) = hc_loader(args, num_workers=args.num_workers)
 
@@ -116,6 +115,7 @@ def main():
     parser.add_argument('--negative_samples', type=int, default=10)
     parser.add_argument('--prediction_step', type=int, default=12)
     parser.add_argument('--subsample', action="store_true")
+    parser.add_argument('--nonlinear_encoding', action="store_true")
     # General
     parser.add_argument('--genc_input', type=int, default=55)
     parser.add_argument('--seed', type=int, default=22)
