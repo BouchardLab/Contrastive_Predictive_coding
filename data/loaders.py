@@ -14,6 +14,7 @@ from data.datasets.m1 import M1Dataset
 from data.datasets.hc import HCDataset
 from data.datasets.temp import TEMPDataset
 from data.datasets.ms import MSDataset
+from data.datasets.general import GeneralDataset
 
 
 def sum_over_chunks(X, stride):
@@ -288,6 +289,63 @@ def m1_loader(opt, num_workers=16, length=100, good_ts=None, train_test_ratio=0.
             X_train, length=length
         )
         test_dataset = M1Dataset(X_test, mean=train_dataset.mean, std=train_dataset.std)
+        train_loader = torch.utils.data.DataLoader(
+            dataset=train_dataset,
+            batch_size=opt.batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+        )
+        test_loader = torch.utils.data.DataLoader(
+            dataset=test_dataset,
+            batch_size=1,
+            shuffle=False,
+            num_workers=num_workers,
+        )
+        return train_loader, train_dataset, test_loader, test_dataset, Y_train, Y_test
+
+
+def mc_loader(opt, num_workers=16, length=100, good_ts=None, train_test_ratio=0.8):
+    # load data
+
+    with open("/home/rmmeng/data/neural/mc_maze_nerual_spikes_smth_50_vs_handvel_cond0.pickle", "rb") as f:
+        data = pickle.load(f)
+        rates, vels = data["rates"], data["vels"]
+    X, Y = rates, vels
+    good_ts = None
+
+    assert X.ndim == 3 and Y.ndim == 3, "X and Y must be 3 dims."
+    # flatten first two dims in X and Y
+    X = X.reshape(-1, X.shape[-1])
+    Y = Y.reshape(-1, Y.shape[-1])
+
+    if good_ts is not None:
+        X = X[:good_ts]
+        Y = Y[:good_ts]
+
+    if train_test_ratio == 1:
+        train_dataset = GeneralDataset(
+            X, length=length
+        )
+        test_dataset = None
+        train_loader = torch.utils.data.DataLoader(
+            dataset=train_dataset,
+            batch_size=opt.batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+        )
+        test_loader = None
+        return train_loader, train_dataset, test_loader, test_dataset
+    else:
+        n = X.shape[0]
+        n_train = int(n * train_test_ratio)
+        X_train = X[:n_train]
+        X_test = X[n_train:]
+        Y_train = Y[:n_train]
+        Y_test = Y[n_train:]
+        train_dataset = GeneralDataset(
+            X_train, length=length
+        )
+        test_dataset = GeneralDataset(X_test, mean=train_dataset.mean, std=train_dataset.std)
         train_loader = torch.utils.data.DataLoader(
             dataset=train_dataset,
             batch_size=opt.batch_size,

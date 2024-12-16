@@ -34,34 +34,13 @@ def lorenz_model(args):
     model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
     return model
 
-
-def m1_model(args):
+def general_model(args):
     genc_hidden = 5
     gar_hidden = 5
     model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
     return model
 
-
-def hc_model(args):
-    genc_hidden = 5
-    gar_hidden = 5
-    model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
-    return model
-
-
-def temp_model(args):
-    genc_hidden = 5
-    gar_hidden = 5
-    model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
-    return model
-
-
-def ms_model(args):
-    genc_hidden = 5
-    gar_hidden = 5
-    model = GeneralModel(args, genc_hidden=genc_hidden, gar_hidden=gar_hidden)
-    return model
-
+m1_model = hc_model = temp_model = ms_model = mc_model = general_model    
 
 def load_model(args, reload_model=False):
 
@@ -77,6 +56,8 @@ def load_model(args, reload_model=False):
         model = temp_model(args)
     elif args.experiment == "ms":
         model = ms_model(args)
+    elif args.experiment == "mc":
+        model = mc_model(args)
     else:
         raise NotImplementedError
 
